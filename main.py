@@ -1,86 +1,73 @@
 # tram consist of
 # name, list of stops
 # dictionary of trams
-class Tram:
+class TramClass:
 
 	TramsDict = {}
 
 	def __init__(self,name):
-		Tram.TramsDict[name] = self
+		TramClass.TramsDict[name] = self
 		self.name = name
 		self.route = []
 
-	def AddIDOfGroupOfAliasesToRoute(self,groupofaliases):
-		self.route.append(groupofaliases)
+	def AddAliasGroupIndexToRoute(self,index):
+		self.route.append(index)
 
 	@staticmethod
 	def MakeIDOfGroupOfAliasesIDOfNodes():
 		pass
 
-class GroupOfAliases():
+class AliasClass:
 
-	GroupsOfAliasesAsList = []
-	ID = 0
+	AliasToGroup = {}
+	NextGroupIndex = 0
 
-	def __init__(self,aliases):
-		self.id = GroupOfAliases.ID
-		self.aliases = set(aliases)
-		GroupOfAliases.GroupsOfAliasesAsList.append(self)
+	@staticmethod
+	def AddCurrentAliasesToFirstGroup(ListOfAliases,FirstGroupIndex):
 
-		GroupOfAliases.ID += 1
+		for alias in ListOfAliases:
+			AliasClass.AliasToGroup[alias] = FirstGroupIndex
 
-	def HasAliasesInCommonWith(self,other):
-		return len(self.aliases.intersection(other.aliases))
+	@staticmethod
+	def UnionGroupsWithFirst(ListOfGroups):
 
-	def GroupUnion(self,other):
-		self.aliases = self.aliases.union(other.aliases)
-		return self
+		FirstGroupIndex = ListOfGroups[0]
+		for i in range(1,len(ListOfGroups)):
+			AllAliases = [k for k,v in AliasClass.AliasToGroup.items()]
+			for alias in AllAliases:
+				AliasClass.AliasToGroup[alias] = FirstGroupIndex
 
-# Node consist of
-# name, aliases, neighbours
+	@staticmethod
+	def UpdateTramRoutes(ListOfGroups):
 
-class Node:
+		First = ListOfGroups[0]
+		for TramName in TramClass.TramsDict:
+			for i in range(0,len(TramClass.TramsDict[TramName].route)):
+				if TramClass.TramsDict[TramName].route[i] in ListOfGroups:
+					TramClass.TramsDict[TramName].route[i] = First
 
-	AliasesDict = {}
+	@staticmethod
+	def KeepUnionFind(ListOfAliases):
+		ListOfFoundGroupIndex = []
+		for alias in ListOfAliases:
+			if alias in AliasClass.AliasToGroup:
+				if AliasClass.AliasToGroup[alias] not in ListOfFoundGroupIndex:
+					ListOfFoundGroupIndex.append(AliasClass.AliasToGroup[alias])
+		IndexToReturn = -1
+		if ListOfFoundGroupIndex == []:
+			for alias in ListOfAliases:
+				AliasClass.AliasToGroup[alias] = AliasClass.NextGroupIndex
+			IndexToReturn = AliasClass.NextGroupIndex
+			AliasClass.NextGroupIndex += 1
 
-	NodesDict = {}
+		else:
+			FirstGroupIndex = ListOfFoundGroupIndex[0]
+			AliasClass.AddCurrentAliasesToFirstGroup(ListOfAliases,FirstGroupIndex)
+			AliasClass.UnionGroupsWithFirst(ListOfFoundGroupIndex)
+			AliasClass.UpdateTramRoutes(ListOfFoundGroupIndex)
+			IndexToReturn = FirstGroupIndex
 
-	def __init__(self,id,aliases):
-		self.id = id
-		self.aliases = set(aliases)
-		for alias in aliases:
-			Node.AliasesDict[alias] = self
-
-		Node.NodesDict[self.id] = self
-
-def MergeAndReplace(i,j):
-	GroupAtI = GroupOfAliases.GroupsOfAliasesAsList[i]
-	GroupAtJ = GroupOfAliases.GroupsOfAliasesAsList[j]
-	MergedGroup = GroupAtI.GroupUnion(GroupAtJ)
-
-	GroupOfAliases.GroupsOfAliasesAsList[i] = MergedGroup
-	GroupOfAliases.GroupsOfAliasesAsList[j] = MergedGroup
-
-
-def CondenseAllGroupsOfAliases():
-	GroupsOfAliasesAsList = GroupOfAliases.GroupsOfAliasesAsList
-
-	print(len(GroupsOfAliasesAsList))
-
-	for i in range(0,len(GroupsOfAliasesAsList)):
-		GroupOfAliases1 = GroupsOfAliasesAsList[i]
-		for j in range(1,len(GroupsOfAliasesAsList)):
-			#print(f"{i}\t{j}")
-			GroupOfAliases2 = GroupsOfAliasesAsList[j]
-			if GroupOfAliases1.HasAliasesInCommonWith(GroupOfAliases2)==0:
-				continue
-			MergeAndReplace(i,j)
-
-def AssignNodesToGroupsOfAliases():
-	SetOfGroupsOfAliases = set(GroupOfAliases.GroupsOfAliasesAsList)
-	for Group in SetOfGroupsOfAliases:
-		Node(Group.id,Group.aliases)
-	Tram.MakeIDOfGroupOfAliasesIDOfNodes()#Does Nothing
+		return IndexToReturn
 
 def ReadFile(filename):
 	f2open = open(filename,"r",encoding="UTF-8-SIG")
@@ -89,29 +76,21 @@ def ReadFile(filename):
 	f2open.close()
 	names = filecontent[0].strip().split(",")
 	for name in names:
-		Tram(name)
+		TramClass(name)
+
 	for i in range(1,len(filecontent)):
 		ithListOfGroups = filecontent[i].strip().split(",")
+
 		for j in range(0,len(ithListOfGroups)):
+			if ithListOfGroups[j]=="":
+				continue
+
 			CurrentListOfAliases = ithListOfGroups[j].strip().split("|")
-
-			CurrentGroupOfAliases = GroupOfAliases(CurrentListOfAliases)
-			Tram.TramsDict[names[j]].AddIDOfGroupOfAliasesToRoute(CurrentGroupOfAliases.ID)
-
-	CondenseAllGroupsOfAliases()
-	AssignNodesToGroupsOfAliases()
-
+			AliasGroupIndex = AliasClass.KeepUnionFind(CurrentListOfAliases)
+			TramClass.TramsDict[names[j]].AddAliasGroupIndexToRoute(AliasGroupIndex)
 
 def main():
 	ReadFile("dataM2.csv")
-
-	print(len(Tram.TramsDict.values()))
-	# for tram in Tram.TramsDict.values():
-	# 	print(tram.name)
-
-	print(len(Node.NodesDict.values()))
-	# for node in Node.NodesDict.values():
-	# 	print(node.id)
-
+	
 if __name__ == "__main__":
 	main()
