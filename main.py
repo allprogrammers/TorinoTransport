@@ -10,12 +10,18 @@ class TramClass:
 		self.name = name
 		self.route = []
 
-	def AddAliasGroupIndexToRoute(self,index):
-		self.route.append(index)
+	@staticmethod
+	def AddAliasGroupIndexToRoute(name,index):
+		TramClass.TramsDict[name].route.append(index)
 
 	@staticmethod
-	def MakeIDOfGroupOfAliasesIDOfNodes():
-		pass
+	def UpdateTramRoutesToFirst(ListOfGroups):
+
+		First = ListOfGroups[0]
+		for TramName in TramClass.TramsDict:
+			for i in range(0,len(TramClass.TramsDict[TramName].route)):
+				if TramClass.TramsDict[TramName].route[i] in ListOfGroups:
+					TramClass.TramsDict[TramName].route[i] = First
 
 class AliasClass:
 
@@ -38,15 +44,6 @@ class AliasClass:
 				AliasClass.AliasToGroup[alias] = FirstGroupIndex
 
 	@staticmethod
-	def UpdateTramRoutes(ListOfGroups):
-
-		First = ListOfGroups[0]
-		for TramName in TramClass.TramsDict:
-			for i in range(0,len(TramClass.TramsDict[TramName].route)):
-				if TramClass.TramsDict[TramName].route[i] in ListOfGroups:
-					TramClass.TramsDict[TramName].route[i] = First
-
-	@staticmethod
 	def KeepUnionFind(ListOfAliases):
 		ListOfFoundGroupIndex = []
 		for alias in ListOfAliases:
@@ -64,10 +61,24 @@ class AliasClass:
 			FirstGroupIndex = ListOfFoundGroupIndex[0]
 			AliasClass.AddCurrentAliasesToFirstGroup(ListOfAliases,FirstGroupIndex)
 			AliasClass.UnionGroupsWithFirst(ListOfFoundGroupIndex)
-			AliasClass.UpdateTramRoutes(ListOfFoundGroupIndex)
+			TramClass.UpdateTramRoutesToFirst(ListOfFoundGroupIndex)
 			IndexToReturn = FirstGroupIndex
 
 		return IndexToReturn
+
+class NodeClass:
+
+	NodeIDToNode = {}
+
+	def __init__(self,ID):
+		self.ID = ID
+		NodeClass.NodeIDToNode[ID] = self
+
+		self.neighbours = set()
+
+	def add_neighbour(neighbour):
+		self.neighbours.add(neighbour)
+
 
 def ReadFile(filename):
 
@@ -90,12 +101,20 @@ def ReadFile(filename):
 
 			AliasGroupIndex = AliasClass.KeepUnionFind(CurrentListOfAliases)
 
-			TramClass.TramsDict[names[j]].AddAliasGroupIndexToRoute(AliasGroupIndex)
+			TramClass.AddAliasGroupIndexToRoute(names[j],AliasGroupIndex)
+
+	Groups = set()
+	for x in AliasClass.AliasToGroup:
+		Groups.add(AliasClass.AliasToGroup[x])
+	print(len(Groups))
 
 def main():
+
 	ReadFile("dataM2.csv")
 
-	
+
+
+
 
 if __name__ == "__main__":
 	main()
