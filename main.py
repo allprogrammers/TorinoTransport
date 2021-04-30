@@ -70,27 +70,32 @@ class AliasClass:
 		return IndexToReturn
 
 def ReadFile(filename):
+
 	f2open = open(filename,"r",encoding="UTF-8-SIG")
 	filecontent = f2open.readlines()
-	#print(filecontent)
 	f2open.close()
+
 	names = filecontent[0].strip().split(",")
 	for name in names:
 		TramClass(name)
 
 	for i in range(1,len(filecontent)):
-		ithListOfGroups = filecontent[i].strip().split(",")
 
+		ithListOfGroups = filecontent[i].strip().split(",")
 		for j in range(0,len(ithListOfGroups)):
 			if ithListOfGroups[j]=="":
 				continue
 
 			CurrentListOfAliases = ithListOfGroups[j].strip().split("|")
+
 			AliasGroupIndex = AliasClass.KeepUnionFind(CurrentListOfAliases)
+
 			TramClass.TramsDict[names[j]].AddAliasGroupIndexToRoute(AliasGroupIndex)
 
 def main():
 	ReadFile("dataM2.csv")
+
 	
+
 if __name__ == "__main__":
 	main()
