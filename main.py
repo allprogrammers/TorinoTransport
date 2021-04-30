@@ -76,9 +76,33 @@ class NodeClass:
 
 		self.neighbours = set()
 
-	def add_neighbour(neighbour):
+		self.visited = False
+		self.DistanceFromStart = -1
+		self.parent = None
+
+	def add_neighbour(self,neighbour):
 		self.neighbours.add(neighbour)
 
+	@staticmethod
+	def make_neighbour(first,second):
+		first.add_neighbour(second)
+		second.add_neighbour(first)
+
+	@staticmethod
+	def reset():
+		for x in NodeClass.NodeIDToNode:
+			NodeClass.NodeIDToNode[x].visited = False
+			NodeClass.NodeIDToNode[x].DistanceFromStart = -1
+			NodeClass.NodeIDToNode[x].parent = None
+
+	def visit(self):
+		self.visited = True
+
+	def setDistance(self,newDistance):
+		self.DistanceFromStart = newDistance
+
+	def setParent(self,parentNode):
+		self.parent = parentNode
 
 def ReadFile(filename):
 
@@ -105,13 +129,69 @@ def ReadFile(filename):
 
 	Groups = set()
 	for x in AliasClass.AliasToGroup:
-		Groups.add(AliasClass.AliasToGroup[x])
-	print(len(Groups))
+		if x not in NodeClass.NodeIDToNode:
+			NodeClass(AliasClass.AliasToGroup[x])
+
+	for Tram in TramClass.TramsDict.values():
+		for i in range(0,len(Tram.route)-1):
+			FirstNode = NodeClass.NodeIDToNode[Tram.route[i]]
+			SecondNode = NodeClass.NodeIDToNode[Tram.route[i+1]]
+			NodeClass.make_neighbour(FirstNode,SecondNode)
+
+def RouteBetween(start,finish):
+	start.visit()
+
+	if start==finish:
+		return [start]
+
+	neighbours=[node for node in start.neighbours if node.visited==False]
+
+	if neighbours == []:
+		return []
+
+
+	for neighbour in neighbours:
+		resp = RouteBetween(neighbour,finish)
+
+		if not resp:
+			continue
+		return [start]+resp
+
+def ShortestRouteBetween(start,finish):
+
+	ToVisit = [start]
+	start.DistanceFromStart = 0
+	while ToVisit:
+		current = ToVisit.pop(0)
+		if current.visited == True:
+			continue
+		current.visit()
+		ToVisit = ToVisit + [node for node in current.neighbours if node.visited == False]
+		for node in current.neighbours:
+			if node.DistanceFromStart == -1 or node.DistanceFromStart>current.DistanceFromStart+1:
+				node.setDistance(current.DistanceFromStart+1)
+				node.setParent(current)
+
+		#print([x.ID for x in ToVisit])
+	if finish.DistanceFromStart==-1:
+		return []
+
+	routeToReturn = []
+	last = finish
+	while last is not None:
+		routeToReturn = [last] + routeToReturn
+		last = last.parent
+
+	return routeToReturn
 
 def main():
 
 	ReadFile("dataM2.csv")
 
+	route = ShortestRouteBetween(NodeClass.NodeIDToNode[1],NodeClass.NodeIDToNode[2])
+	print([(x.ID,x.DistanceFromStart) for x in route])
+	NodeClass.reset()
+	
 
 
 
