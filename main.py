@@ -138,8 +138,8 @@ def ReadFile(NodeFile,TimingFile,outputfile):
 			AliasGroupIndex = AliasClass.KeepUnionFind(CurrentListOfAliases)
 
 			TramClass.AddAliasGroupIndexToRoute(names[j],AliasGroupIndex)
+			print(int(ithListOfTimes[j]),end="")
 			TramClass.AddTimeToTimings(names[j],int(ithListOfTimes[j]))
-
 
 	Groups = set()
 	for x in AliasClass.AliasToGroup:
@@ -172,7 +172,8 @@ def ReadFile(NodeFile,TimingFile,outputfile):
 			else:
 				G.add_edge(FirstNode,SecondNode,weight=Tram.timings[i+1])
 
-	resp = nx.betweenness_centrality(G)
+
+	resp = nx.betweenness_centrality(G,weight="weight")
 	output = ""
 	for k in resp:
 		out1 = ""
@@ -187,7 +188,7 @@ def ReadFile(NodeFile,TimingFile,outputfile):
 
 def main():
 
-	ReadFile("trams.csv","alltimings.csv","outTimingM2.csv")
+	ReadFile("trams.csv","TRAMTIMINGS.csv","outTimingTrams.csv")
 	return
 
 
