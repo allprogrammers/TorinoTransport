@@ -12,10 +12,15 @@ class TramClass:
 		TramClass.TramsDict[name] = self
 		self.name = name
 		self.route = []
+		self.timings = []
 
 	@staticmethod
 	def AddAliasGroupIndexToRoute(name,index):
 		TramClass.TramsDict[name].route.append(index)
+
+	@staticmethod
+	def AddTimeToTimings(name,time):
+		TramClass.TramsDict[name].timings.append(time)
 
 	@staticmethod
 	def UpdateTramRoutesToFirst(ListOfGroups):
@@ -107,19 +112,24 @@ class NodeClass:
 	def setParent(self,parentNode):
 		self.parent = parentNode
 
-def ReadFile(filename,outputfile):
+def ReadFile(NodeFile,TimingFile,outputfile):
 
-	f2open = open(filename,"r",encoding="UTF-8-SIG")
-	filecontent = f2open.readlines()
+	f2open = open(NodeFile,"r",encoding="UTF-8-SIG")
+	NodeContent = f2open.readlines()
+	f2open.close()
+	names = NodeContent[0].strip().split(",")
+
+	f2open = open(TimingFile,"r",encoding="UTF-8-SIG")
+	TimingContent = f2open.readlines()
 	f2open.close()
 
-	names = filecontent[0].strip().split(",")
 	for name in names:
 		TramClass(name)
 
-	for i in range(1,len(filecontent)):
+	for i in range(1,len(NodeContent)):
 
-		ithListOfGroups = filecontent[i].strip().split(",")
+		ithListOfGroups = NodeContent[i].strip().split(",")
+		ithListOfTimes = TimingContent[i].strip().split(",")
 		for j in range(0,len(ithListOfGroups)):
 			if ithListOfGroups[j]=="":
 				continue
@@ -129,6 +139,8 @@ def ReadFile(filename,outputfile):
 			AliasGroupIndex = AliasClass.KeepUnionFind(CurrentListOfAliases)
 
 			TramClass.AddAliasGroupIndexToRoute(names[j],AliasGroupIndex)
+			TramClass.AddTimeToTimings(names[j],int(ithListOfTimes[j]))
+
 
 	Groups = set()
 	for x in AliasClass.AliasToGroup:
@@ -156,7 +168,10 @@ def ReadFile(filename,outputfile):
 		for i in range(0,len(Tram.route)-1):
 			FirstNode = NodeClass.NodeIDToNode[Tram.route[i]]
 			SecondNode = NodeClass.NodeIDToNode[Tram.route[i+1]]
-			G.add_edge(FirstNode,SecondNode)
+			if G.has_edge(FirstNode,SecondNode) and G[FirstNode][SecondNode]['weight']>Tram.timings[i+1]:
+				continue
+			else:
+				G.add_edge(FirstNode,SecondNode,weight=Tram.timings[i+1])
 
 	resp = nx.betweenness_centrality(G)
 	output = ""
@@ -173,8 +188,7 @@ def ReadFile(filename,outputfile):
 
 def main():
 
-	#ReadFile("dataM1.csv","outM1.csv","M1Aliases.txt")
-	ReadFile("dataM2.csv","outM2.csv")
+	ReadFile("trams.csv","alltimings.csv","outTimingM2.csv")
 	return
 
 
