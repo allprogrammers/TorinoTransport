@@ -1,3 +1,6 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+
 # tram consist of
 # name, list of stops
 # dictionary of trams
@@ -104,7 +107,7 @@ class NodeClass:
 	def setParent(self,parentNode):
 		self.parent = parentNode
 
-def ReadFile(filename):
+def ReadFile(filename,outputfile,aliasfilename):
 
 	f2open = open(filename,"r",encoding="UTF-8-SIG")
 	filecontent = f2open.readlines()
@@ -132,66 +135,48 @@ def ReadFile(filename):
 		if x not in NodeClass.NodeIDToNode:
 			NodeClass(AliasClass.AliasToGroup[x])
 
+	outputString = ""
+	GroupIds = AliasClass.AliasToGroup.values()
+	GroupIDToAliases = {}
+	for alias in AliasClass.AliasToGroup:
+		if AliasClass.AliasToGroup[alias] not in GroupIDToAliases:
+			GroupIDToAliases[AliasClass.AliasToGroup[alias]]=[]
+		GroupIDToAliases[AliasClass.AliasToGroup[alias]].append(alias)
+
+	for key in GroupIDToAliases:
+		outputString += f"{key},{[x for x in GroupIDToAliases[key]]}\n"
+
+	Afile = open(aliasfilename,"w")
+	Afile.write(outputString)
+	Afile.close()
+
+	G = nx.Graph()
+	G.add_nodes_from(NodeClass.NodeIDToNode.values())
 	for Tram in TramClass.TramsDict.values():
 		for i in range(0,len(Tram.route)-1):
 			FirstNode = NodeClass.NodeIDToNode[Tram.route[i]]
 			SecondNode = NodeClass.NodeIDToNode[Tram.route[i+1]]
-			NodeClass.make_neighbour(FirstNode,SecondNode)
+			G.add_edge(FirstNode,SecondNode)
 
-def RouteBetween(start,finish):
-	start.visit()
+	resp = nx.betweenness_centrality(G)
+	output = ""
+	for k in resp:
+		output += f"{k.ID},{resp[k]}\n"
+	outputfile = open(outputfile,"w")
+	outputfile.write(output)
+	outputfile.close()
 
-	if start==finish:
-		return [start]
-
-	neighbours=[node for node in start.neighbours if node.visited==False]
-
-	if neighbours == []:
-		return []
-
-
-	for neighbour in neighbours:
-		resp = RouteBetween(neighbour,finish)
-
-		if not resp:
-			continue
-		return [start]+resp
-
-def ShortestRouteBetween(start,finish):
-
-	ToVisit = [start]
-	start.DistanceFromStart = 0
-	while ToVisit:
-		current = ToVisit.pop(0)
-		if current.visited == True:
-			continue
-		current.visit()
-		ToVisit = ToVisit + [node for node in current.neighbours if node.visited == False]
-		for node in current.neighbours:
-			if node.DistanceFromStart == -1 or node.DistanceFromStart>current.DistanceFromStart+1:
-				node.setDistance(current.DistanceFromStart+1)
-				node.setParent(current)
-
-		#print([x.ID for x in ToVisit])
-	if finish.DistanceFromStart==-1:
-		return []
-
-	routeToReturn = []
-	last = finish
-	while last is not None:
-		routeToReturn = [last] + routeToReturn
-		last = last.parent
-
-	return routeToReturn
 
 def main():
 
-	ReadFile("dataM2.csv")
+	#ReadFile("dataM1.csv","outM1.csv","M1Aliases.txt")
+	ReadFile("dataM2.csv","outM2.csv","M2Aliases.txt")
+	return
 
 	route = ShortestRouteBetween(NodeClass.NodeIDToNode[1],NodeClass.NodeIDToNode[2])
 	print([(x.ID,x.DistanceFromStart) for x in route])
 	NodeClass.reset()
-	
+
 
 
 
