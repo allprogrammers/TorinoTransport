@@ -107,7 +107,7 @@ class NodeClass:
 	def setParent(self,parentNode):
 		self.parent = parentNode
 
-def ReadFile(filename,outputfile,aliasfilename):
+def ReadFile(filename,outputfile):
 
 	f2open = open(filename,"r",encoding="UTF-8-SIG")
 	filecontent = f2open.readlines()
@@ -143,12 +143,12 @@ def ReadFile(filename,outputfile,aliasfilename):
 			GroupIDToAliases[AliasClass.AliasToGroup[alias]]=[]
 		GroupIDToAliases[AliasClass.AliasToGroup[alias]].append(alias)
 
-	for key in GroupIDToAliases:
-		outputString += f"{key},{[x for x in GroupIDToAliases[key]]}\n"
-
-	Afile = open(aliasfilename,"w")
-	Afile.write(outputString)
-	Afile.close()
+	# for key in GroupIDToAliases:
+	# 	outputString += f"{key},{[x for x in GroupIDToAliases[key]]}\n"
+	#
+	# Afile = open(aliasfilename,"w")
+	# Afile.write(outputString)
+	# Afile.close()
 
 	G = nx.Graph()
 	G.add_nodes_from(NodeClass.NodeIDToNode.values())
@@ -161,7 +161,11 @@ def ReadFile(filename,outputfile,aliasfilename):
 	resp = nx.betweenness_centrality(G)
 	output = ""
 	for k in resp:
-		output += f"{k.ID},{resp[k]}\n"
+		out1 = ""
+		for als in GroupIDToAliases[k.ID]:
+			out1 += als+"|"
+		out1 = out1[:-1]
+		output += out1 + f",{resp[k]}\n"
 	outputfile = open(outputfile,"w")
 	outputfile.write(output)
 	outputfile.close()
@@ -170,15 +174,8 @@ def ReadFile(filename,outputfile,aliasfilename):
 def main():
 
 	#ReadFile("dataM1.csv","outM1.csv","M1Aliases.txt")
-	ReadFile("dataM2.csv","outM2.csv","M2Aliases.txt")
+	ReadFile("dataM2.csv","outM2.csv")
 	return
-
-	route = ShortestRouteBetween(NodeClass.NodeIDToNode[1],NodeClass.NodeIDToNode[2])
-	print([(x.ID,x.DistanceFromStart) for x in route])
-	NodeClass.reset()
-
-
-
 
 
 if __name__ == "__main__":
